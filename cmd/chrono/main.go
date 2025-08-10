@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -8,42 +9,30 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 3 {
-		fmt.Println("Usage: chrono run <workflow-name>")
+	if len(os.Args) < 3 || os.Args[1] != "run" {
+		fmt.Println("Usage: chrono run <workflow> [--key value]...")
 		os.Exit(1)
 	}
 
-	cmd := os.Args[1]
-	name := os.Args[2]
+	workflowName := os.Args[2]
 
-	// Example workflow for testing
-	chrono.Register(&chrono.Workflow{
-		Name: "send-welcome",
-		Steps: []chrono.Step{
-			{Name: "create-user-record", Run: func() error {
-				fmt.Println("    -> creating user record...")
-				return nil
-			}},
-			{Name: "send-email", Run: func() error {
-				fmt.Println("    -> sending welcome email...")
-				return nil
-			}},
-		},
-	})
+	// Dynamic params: parse --key value pairs
+	params := make(map[string]interface{})
+	fs := flag.NewFlagSet(workflowName, flag.ExitOnError)
+	user := fs.String("user", "", "User name")
+	email := fs.String("email", "", "Email address")
+	fs.Parse(os.Args[3:])
 
-	switch cmd {
-	case "run":
-		wf, ok := chrono.GetWorkflow(name)
-		if !ok {
-			fmt.Printf("Workflow %q not found\n", name)
-			os.Exit(1)
-		}
-		if err := wf.Run(); err != nil {
-			fmt.Printf("Error: %v\n", err)
-			os.Exit(1)
-		}
-	default:
-		fmt.Println("Unknown command:", cmd)
-		os.Exit(1)
+	if *user != "" {
+		params["user"] = *user
+	}
+	if *email != "" {
+		params["email"] = *email
+	}
+
+	if wf, ok := chrono.GetWorkflow(workflowName); ok {
+		wf.Run(params)
+	} else {
+		fmt.Printf("Workflow %s not found\n", workflowName)
 	}
 }
