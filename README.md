@@ -6,3 +6,11 @@ Run workflows from your CLI or embed them in your own Go applications.
 ## Install
 ```bash
 go get github.com/usechrono/chrono
+```
+
+
+# Run Tests
+
+```sh
+go test ./chrono
+```

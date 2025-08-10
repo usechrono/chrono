@@ -1,9 +1,9 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/usechrono/chrono/chrono"
 )
@@ -16,18 +16,26 @@ func main() {
 
 	workflowName := os.Args[2]
 
-	// Dynamic params: parse --key value pairs
 	params := make(map[string]interface{})
-	fs := flag.NewFlagSet(workflowName, flag.ExitOnError)
-	user := fs.String("user", "", "User name")
-	email := fs.String("email", "", "Email address")
-	fs.Parse(os.Args[3:])
 
-	if *user != "" {
-		params["user"] = *user
-	}
-	if *email != "" {
-		params["email"] = *email
+	// Parse --key value pairs from os.Args starting at index 3
+	args := os.Args[3:]
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if strings.HasPrefix(arg, "--") {
+			key := strings.TrimPrefix(arg, "--")
+			if i+1 < len(args) {
+				value := args[i+1]
+				params[key] = value
+				i++ // skip next since it's the value
+			} else {
+				fmt.Printf("Missing value for param %s\n", key)
+				os.Exit(1)
+			}
+		} else {
+			fmt.Printf("Unexpected argument: %s\n", arg)
+			os.Exit(1)
+		}
 	}
 
 	if wf, ok := chrono.GetWorkflow(workflowName); ok {
